@@ -4,22 +4,55 @@ import AuthorsList from "./components/authors-list";
 import AuthorBookList from "./components/author-books-list";
 import NotFound404 from "./components/not-found";
 import { BrowserRouter, Route, Routes, Link, Navigate } from "react-router-dom";
+import LoginForm from "./components/auth";
+import {getToken, getTokenFromStorage, logout} from "./core/actions";
+import axiosInstance from "./core/interceptor";
+
 
 export default function App() {
-  const author1 = { id: 1, name: "Грин", birthdayYear: 1880 };
-  const author2 = { id: 2, name: "Пушкин", birthdayYear: 1799 };
   const [authors, setAuthors] = useState([]);
-  const book1 = { id: 1, name: "Алые паруса", author: author1 };
-  const book2 = { id: 2, name: "Золотая цепь", author: author1 };
-  const book3 = { id: 3, name: "Пиковая дама", author: author2 };
-  const book4 = { id: 4, name: "Руслан и Людмила", author: author2 };
   const [books, setBooks] = useState([]);
+  const [token, setToken] = useState('')
+
+  const getHeaders = () => {
+    let headers = {
+      'Content-Type': 'application/json'
+    }
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token['access']}`
+    }
+
+    return headers
+  }
+
+  const loadData = () => {
+    const headers = getHeaders();
+
+    axiosInstance.get('http://127.0.0.1:8000/api/authors/',{headers})
+      .then(response => {
+        setAuthors(response.data);
+      }).catch(error => {
+        // console.error(error);
+        setAuthors([]);
+    })
+    axiosInstance.get('http://127.0.0.1:8000/api/books/',{headers})
+      .then(response => {
+        setBooks(response.data);
+      }).catch(error => {
+        // console.error(error);
+        setBooks([]);
+      })
+  }
 
   useEffect(() => {
-    setAuthors([author1, author2]);
-    setBooks([book1, book2, book3, book4]);
+    getTokenFromStorage(setToken);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [] );
+
+  useEffect(() => {
+    loadData();
+  }, [token]);
 
   return (
     <div className="App">
@@ -35,21 +68,27 @@ export default function App() {
             <li>
               <Link to="/books">Books</Link>
             </li>
+            <li>
+              {(token)
+                  ? <button onClick={() => logout(setToken)}>Logout</button>
+                  : <Link to='/login'>Login</Link>}
+            </li>
           </ul>
         </nav>
 
         <Routes>
-          <Route path="/" element={<Navigate to="authors" />} />
+          <Route path="/" element={<Navigate to="authors"/>}/>
           <Route path="authors" element={<AuthorsList items={authors} />} />
           <Route path="author/:id" element={<AuthorBookList items={books} />} />
           <Route path="books" element={<BooksList items={books} />} />
+          <Route path='login' element={<LoginForm
+                                          getToken={getToken}
+                                          setToken={setToken}
+                                      />}
+          />
           <Route path="*" element={<NotFound404 />} />
         </Routes>
       </BrowserRouter>
     </div>
   );
 }
-
-
-
-

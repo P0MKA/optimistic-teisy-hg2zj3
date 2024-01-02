@@ -5,6 +5,10 @@
 /.pnp
 .pnp.js
 
+.idea/*
+
+db.sqlite3
+
 # testing
 /coverage
 
