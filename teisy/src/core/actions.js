@@ -1,29 +1,45 @@
 import axios from "axios";
-import {TOKEN_URL} from "./consts";
+import {TOKEN_REFRESH_URL, TOKEN_URL} from "./consts";
 import Cookies from "universal-cookie";
 
+function storeToken(access, refresh, setToken) {
+  // функция для записи JWT-токенов в cookies и в state
+  const cookies = new Cookies();
+  cookies.set('token', access);
+  cookies.set('refresh', refresh);
+  setToken(access);
+}
+
 export function getToken(username, password, setToken) {
-    axios.post(TOKEN_URL, {username: username, password: password})
-        .then(response => {
-              console.log(response.data)
-              const cookies = new Cookies();
-              cookies.set('token', response.data['access']);
-              cookies.set('refresh', response.data['refresh']);
-              setToken(response.data['access']);
-        }).catch(error => {
-            console.error(error);
-    })
+  // получаем jwt-token с бекенда, передавая username и password
+  // в твоем случае email и password
+  axios.post(TOKEN_URL, {username: username, password: password})
+    .then(response => {
+      storeToken(response.data.access, response.data.refresh, setToken);
+    }).catch(error => {
+      console.error(error);
+  })
 }
 
 export function logout(setToken) {
-  const cookies = new Cookies();
-  cookies.set('token', '');
-  cookies.set('refresh', '');
-  setToken('');
+  // разлогиниваем пользователя, стирая токены из state и cookies
+  storeToken('','', setToken);
 }
 
 export function getTokenFromStorage(setToken) {
+  // эту функцию дергаем при перезагрузке страницы
+  // так как state при перезагрузке стирается, чтобы убедиться, что пользователь авторизован,
+  // надо лезть в cookies и искать там, но токены из cookies могут хранится протухшими,
+  // поэтому берём refresh и пытаемся по нему получить access, если удалось - отлично
+  // нет - просто разлогиниваем пользователя
   const cookies = new Cookies();
-  const token = cookies.get('token');
-  setToken(token);
+  const refresh = cookies.get('refresh');
+  const data = {refresh: refresh};
+  axios.post(TOKEN_REFRESH_URL, data)
+    .then(response => {
+      storeToken(response.data.access, refresh, setToken);
+  })
+    .catch(error => {
+      storeToken('','', setToken);
+    });
 }

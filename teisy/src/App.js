@@ -1,3 +1,8 @@
+// Знаю, что ты уже всё перечитала вдоль и поперек, но добавлю немного комментариев, на всякий
+// по-прежнему идем по методичке с той разницей, что используем компоненты на функциях, jwt-токены
+// и обновляем просроченный access =)
+// поэтому индивидуалки, но методичку читаем, чтобы понять, что вообще должно происходить
+
 import { useState, useEffect } from "react";
 import BooksList from "./components/books-list";
 import AuthorsList from "./components/authors-list";
@@ -7,51 +12,80 @@ import { BrowserRouter, Route, Routes, Link, Navigate } from "react-router-dom";
 import LoginForm from "./components/auth";
 import {getToken, getTokenFromStorage, logout} from "./core/actions";
 import axiosInstance from "./core/interceptor";
+import Cookies from "universal-cookie";  // не забываем npm install universal-cookie
 
 
 export default function App() {
   const [authors, setAuthors] = useState([]);
   const [books, setBooks] = useState([]);
   const [token, setToken] = useState('')
+  // токен по задумке методички нужен, чтобы проверять залогинился пользователь или нет =)
+  // но мы будем ещё использовать его в useEffect в качестве зависимости dependencies
+  // когда токен меняется, применяется эффект и стягиваются данные с бекенда
+
 
   const getHeaders = () => {
+    // функция получения заголовков для axios
+    // если в куках записан токен, добавляем его в заголовки,
+    // если нет то увы =)
+    const cookies = new Cookies();
+    const jwtToken = cookies.get('token');
+
     let headers = {
       'Content-Type': 'application/json'
     }
 
-    if (token) {
-      headers['Authorization'] = `Bearer ${token['access']}`
+    if (jwtToken) {
+      headers['Authorization'] = `Bearer ${jwtToken}`
     }
 
     return headers
   }
 
-  const loadData = () => {
+  async function loadData() {
+    // неявный промис отправляем асинхронно запросы на бекенд
+    // ждем ответы или ошибки с полюбившимся синтаксисом async / await
+    // У тебя эта функция должна содержать вызовы fetchData ;)
+    // пиши как тебе хочется, это главное
     const headers = getHeaders();
 
-    axiosInstance.get('http://127.0.0.1:8000/api/authors/',{headers})
-      .then(response => {
-        setAuthors(response.data);
-      }).catch(error => {
-        // console.error(error);
-        setAuthors([]);
-    })
-    axiosInstance.get('http://127.0.0.1:8000/api/books/',{headers})
-      .then(response => {
-        setBooks(response.data);
-      }).catch(error => {
-        // console.error(error);
-        setBooks([]);
-      })
+    try {
+      // открываем блок try, вдруг response прилетит с ошибкой
+      const response = await axiosInstance.get(
+          'http://127.0.0.1:8000/api/authors/',{headers}
+      )
+      // как обычно await'им результат промиса и присваиваем его в переменную
+      setAuthors(response.data);
+    } catch (error) {
+      // а это JS аналог except =)
+      setAuthors([]);
+    }
+
+    try {
+      const response = await axiosInstance.get(
+          'http://127.0.0.1:8000/api/books/',{headers}
+      )
+      setBooks(response.data);
+    } catch (error) {
+      setBooks([]);
+    }
   }
 
   useEffect(() => {
+    // теперь вместо загрузки данных с бека мы пытаемся получить токен, записанный в cookies
     getTokenFromStorage(setToken);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [] );
 
   useEffect(() => {
-    loadData();
+    // а если удалось получить токен, то грузим данные.
+    // Пытаемся грузить данные при любом изменении token, так как он в deps=[token] (условие применения эффекта)
+    // если мы разлогинимся, какие-то API могут стать для нас недоступными
+
+    loadData().then();
+    // .then() нужен так как loadData теперь асинхронная функция и возвращает промис неявно
+    // .then можно убрать, но будет ругаться линтер IDE
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   return (
@@ -71,7 +105,9 @@ export default function App() {
             <li>
               {(token)
                   ? <button onClick={() => logout(setToken)}>Logout</button>
-                  : <Link to='/login'>Login</Link>}
+                  : <Link to='/login'>Login</Link>
+              // любимые тернарники ;)
+              }
             </li>
           </ul>
         </nav>
@@ -84,6 +120,7 @@ export default function App() {
           <Route path='login' element={<LoginForm
                                           getToken={getToken}
                                           setToken={setToken}
+                                          token={token}
                                       />}
           />
           <Route path="*" element={<NotFound404 />} />

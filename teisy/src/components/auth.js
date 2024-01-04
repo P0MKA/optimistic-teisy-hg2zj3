@@ -1,8 +1,8 @@
 import {useState} from 'react';
-import {NavLink, Navigate} from 'react-router-dom';
+import {Navigate} from 'react-router-dom';
 
 
-function LoginForm ({getToken, setToken}) {
+function LoginForm({getToken, setToken, token}) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
@@ -12,13 +12,21 @@ function LoginForm ({getToken, setToken}) {
   }
 
   return (
-    <form onSubmit={(event) => handleSubmit(event)}>
-      <input type="text" name='username' placeholder="login"
-             onChange={({target}) => setUsername(target.value)}/>
-      <input type="password" name='password' placeholder="password"
-             onChange={({target}) => setPassword(target.value)}/>
-      <input type="submit" value="Login"/>
-    </form>
+      <div>
+        <form onSubmit={(event) => handleSubmit(event)}>
+          <input type="text" name='username' placeholder="login"
+                 onChange={({target}) => setUsername(target.value)}/>
+          <input type="password" name='password' placeholder="password"
+                 onChange={({target}) => setPassword(target.value)}/>
+          <input type="submit" value="Login"/>
+        </form>
+        {// тернарник, чтобы отправиться на главную в случае успешной авторизации
+          (token)
+            ? <Navigate to={'/'}/>
+            : null
+        }
+      </div>
+
   );
 }
 
