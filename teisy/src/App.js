@@ -13,7 +13,8 @@ import LoginForm from "./components/auth";
 import {getToken, getTokenFromStorage, logout} from "./core/actions";
 import axiosInstance from "./core/interceptor";
 import Cookies from "universal-cookie";  // не забываем npm install universal-cookie
-
+import { ToastContainer} from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function App() {
   const [authors, setAuthors] = useState([]);
@@ -90,6 +91,7 @@ export default function App() {
 
   return (
     <div className="App">
+      <ToastContainer/>
       <h1>Hello ❤️ teisy</h1>
       <h2>Start editing to see some magic happen!</h2>
 

@@ -1,6 +1,7 @@
 import axios from "axios";
 import {TOKEN_REFRESH_URL, TOKEN_URL} from "./consts";
 import Cookies from "universal-cookie";
+import { toast } from 'react-toastify';
 
 function storeToken(access, refresh, setToken) {
   // функция для записи JWT-токенов в cookies и в state
@@ -15,8 +16,10 @@ export function getToken(username, password, setToken) {
   // в твоем случае email и password
   axios.post(TOKEN_URL, {username: username, password: password})
     .then(response => {
+      toast('Так поднимем же бокалы 🥂 детского шампанского за успешную авторизацию 🎉')
       storeToken(response.data.access, response.data.refresh, setToken);
     }).catch(error => {
+      toast('Походу 🤨 надо было подучить клингонский 🤬')
       console.error(error);
   })
 }
