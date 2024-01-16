@@ -1,0 +1,10 @@
+[
+  {
+    "model": "library.author",
+    "pk": 1,
+    "fields": {
+      "name": "Иван Билибин",
+      "birthday_year": 1876
+    }
+  }
+]
