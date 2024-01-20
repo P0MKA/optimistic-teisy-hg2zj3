@@ -5,7 +5,7 @@ import pytest
 from library.models import Author, Book
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db  # разрешаем использование тестовой базы django
 def test_get_book_works_well(
         author: Author,
         books: List[Book],
